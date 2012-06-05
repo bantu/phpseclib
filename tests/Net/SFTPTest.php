@@ -84,4 +84,29 @@ class Net_SFTPTest extends Net_TestBase
 			);
 		}
 	}
+
+	/**
+	* @depends testRSAPrivateKeyLogin
+	*/
+	public function testRawList($sftp)
+	{
+		$result = $sftp->rawlist();
+		$files = array('.', '..', self::EXAMPLE_FILENAME);
+
+		foreach ($files as $key)
+		{
+			$this->assertArrayHasKey($key, $result);
+
+			$this->assertTrue(
+				isset($result[$key]) && is_array($result[$key]),
+				"Failed asserting that $result[$key] is set and an array."
+			);
+		}
+
+		$this->assertTrue(
+			isset($result[self::EXAMPLE_FILENAME]['size']) &&
+			$result[self::EXAMPLE_FILENAME]['size'] === strlen(self::EXAMPLE_CONTENT),
+			'Failed asserting that rawlist() result contains the example file and its size is equal to the excepted size.'
+		);
+	}
 }
