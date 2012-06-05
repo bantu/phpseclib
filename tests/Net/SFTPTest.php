@@ -38,6 +38,14 @@ class Net_SFTPTest extends Net_TestBase
 	/**
 	* @depends testRSAPrivateKeyLogin
 	*/
+	public function testPwd($sftp)
+	{
+		$this->assertEquals('/home/phpseclib/', $sftp->pwd());
+	}
+
+	/**
+	* @depends testRSAPrivateKeyLogin
+	*/
 	public function testGet($sftp)
 	{
 		$this->assertEquals(
