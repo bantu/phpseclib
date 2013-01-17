@@ -10,6 +10,8 @@ php:
 before_script:
   - git clone git://github.com/zenovich/runkit.git && cd runkit && phpize && ./configure && make && make install && cd ..
   - echo "extension=runkit.so" >> `php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||"`
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq php5-gmp
 
 script:
   - phpunit --verbose
