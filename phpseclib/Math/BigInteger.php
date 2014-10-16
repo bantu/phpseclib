@@ -583,13 +583,14 @@ class Math_BigInteger
         if (!count($this->value)) {
             return $this->precision > 0 ? str_repeat(chr(0), ($this->precision + 1) >> 3) : '';
         }
-        $result = $this->_int2bytes($this->value[count($this->value) - 1]);
+
+        $result = $this->_int2bytes(end($this->value));
 
         $temp = $this->copy();
 
-        for ($i = count($temp->value) - 2; $i >= 0; --$i) {
+        for (end($temp->value), prev($temp->value); key($temp->value) !== null; prev($temp->value)) {
             $temp->_base256_lshift($result, MATH_BIGINTEGER_BASE);
-            $result = $result | str_pad($temp->_int2bytes($temp->value[$i]), strlen($result), chr(0), STR_PAD_LEFT);
+            $result = $result | str_pad($temp->_int2bytes(current($temp->value)), strlen($result), chr(0), STR_PAD_LEFT);
         }
 
         return $this->precision > 0 ?
@@ -907,6 +908,9 @@ class Math_BigInteger
             return $temp;
         }
 
+        $x_value = array_values($x_value);
+        $y_value = array_values($y_value);
+
         if ($x_size < $y_size) {
             $size = $x_size;
             $value = $y_value;
@@ -1052,6 +1056,8 @@ class Math_BigInteger
         }
 
         // at this point, $x_value should be at least as big as - if not bigger than - $y_value
+        $x_value = array_values($x_value);
+        $y_value = array_values($y_value);
 
         $carry = 0;
         for ($i = 0, $j = 1; $j < $y_size; $i+=2, $j+=2) {
@@ -1197,6 +1203,9 @@ class Math_BigInteger
 
         $product_value = $this->_array_repeat(0, $x_length + $y_length);
 
+        $x_value = array_values($x_value);
+        $y_value = array_values($y_value);
+
         // the following for loop could be removed if the for loop following it
         // (the one with nested for loops) initially set $i to 0, but
         // doing so would also make the result in one set of unnecessary adds,
@@ -1204,7 +1213,6 @@ class Math_BigInteger
         // to always be 0
 
         $carry = 0;
-
         for ($j = 0; $j < $x_length; ++$j) { // ie. $i = 0
             $temp = $x_value[$j] * $y_value[0] + $carry; // $product_value[$k] == 0
             $carry = MATH_BIGINTEGER_BASE === 26 ? intval($temp / 0x4000000) : ($temp >> 31);
@@ -1579,10 +1587,10 @@ class Math_BigInteger
         $carry = 0;
         $result = array();
 
-        for ($i = count($dividend) - 1; $i >= 0; --$i) {
-            $temp = MATH_BIGINTEGER_BASE_FULL * $carry + $dividend[$i];
-            $result[$i] = $this->_safe_divide($temp, $divisor);
-            $carry = (int) ($temp - $divisor * $result[$i]);
+        for (end($dividend); ($i = key($dividend)) !== null; prev($dividend)) {
+            $temp = MATH_BIGINTEGER_BASE_FULL * $carry + current($dividend);
+            $result[$i] = $result_i = $this->_safe_divide($temp, $divisor);
+            $carry = (int) ($temp - $divisor * $result_i);
         }
 
         return array($result, $carry);
@@ -1731,13 +1739,15 @@ class Math_BigInteger
         // if it's not, it's even
 
         // find the lowest set bit (eg. the max pow of 2 that divides $n)
-        for ($i = 0; $i < count($n->value); ++$i) {
-            if ( $n->value[$i] ) {
-                $temp = decbin($n->value[$i]);
+        $i = 0;
+        foreach ($n->value as $value) {
+            if ($value) {
+                $temp = decbin($value);
                 $j = strlen($temp) - strrpos($temp, '1') - 1;
                 $j+= 26 * $i;
                 break;
             }
+            ++$i;
         }
         // at this point, 2^$j * $n/(2^$j) == $n
 
@@ -1800,10 +1810,9 @@ class Math_BigInteger
         //static $window_ranges = array(0, 7, 36, 140, 450, 1303, 3529); // from MPM 7.3.1
 
         $e_value = $e->value;
-        $e_length = count($e_value) - 1;
         $e_bits = decbin($e_value[$e_length]);
-        for ($i = $e_length - 1; $i >= 0; --$i) {
-            $e_bits.= str_pad(decbin($e_value[$i]), MATH_BIGINTEGER_BASE, '0', STR_PAD_LEFT);
+        for (end($e_value); ($i = key($e_value)) !== null; prev($e_value)) {
+            $e_bits.= str_pad(decbin(current($e_value)), MATH_BIGINTEGER_BASE, '0', STR_PAD_LEFT);
         }
 
         $e_length = strlen($e_bits);
@@ -2704,10 +2713,16 @@ class Math_BigInteger
         $x_value = array_pad($x_value, $size, 0);
         $y_value = array_pad($y_value, $size, 0);
 
-        for ($i = count($x_value) - 1; $i >= 0; --$i) {
-            if ($x_value[$i] != $y_value[$i]) {
-                return ( $x_value[$i] > $y_value[$i] ) ? $result : -$result;
+        end($x_value);
+        end($y_value);
+        while (($x_i = key($x_value)) !== null && ($y_i = key($y_value)) !== null) {
+            $x_current = current($x_value);
+            $y_current = current($y_value);
+            if ($x_current != $y_current) {
+                return ($x_current > $y_current) ? $result : -$result;
             }
+            prev($x_value);
+            prev($y_value);
         }
 
         return 0;
@@ -3515,9 +3530,10 @@ class Math_BigInteger
 
         $carry = 0;
 
-        for ($i = count($this->value) - 1; $i >= 0; --$i) {
-            $temp = $this->value[$i] >> $shift | $carry;
-            $carry = ($this->value[$i] & $carry_mask) << $carry_shift;
+        for (end($this->value); ($i = key($this->value)) !== null; prev($this->value)) {
+            $v = current($this->value);
+            $temp = $v >> $shift | $carry;
+            $carry = ($v & $carry_mask) << $carry_shift;
             $this->value[$i] = $temp;
         }
 
@@ -3585,8 +3601,8 @@ class Math_BigInteger
      */
     function _trim($value)
     {
-        for ($i = count($value) - 1; $i >= 0; --$i) {
-            if ( $value[$i] ) {
+        for (end($value); ($i = key($value)) !== null; prev($value)) {
+            if (current($value)) {
                 break;
             }
             unset($value[$i]);
