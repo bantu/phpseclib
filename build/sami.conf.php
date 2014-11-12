@@ -12,10 +12,11 @@ class MyArrayStore extends Sami\Store\ArrayStore
 $iterator = Symfony\Component\Finder\Finder::create()
     ->files()
     ->name('*.php')
-    ->in(__DIR__ . '/../phpseclib/')
+    ->in(realpath(__DIR__ . '/../phpseclib/'))
 ;
 
 $versions = Sami\Version\GitVersionCollection::create(__DIR__ . '/../')
+    ->addFromTags('0.3.*')
     ->add('master')
     ->add('php5')
 ;
