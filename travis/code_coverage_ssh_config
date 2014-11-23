@@ -1,0 +1,6 @@
+Host phpseclib.bantux.org
+User phpseclib
+AddressFamily inet
+ConnectTimeout 5
+HostKeyAlgorithms ssh-rsa
+CheckHostIP no

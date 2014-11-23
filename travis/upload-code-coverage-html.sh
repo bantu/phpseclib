@@ -8,19 +8,14 @@
 # file that was distributed with this source code.
 #
 
-USERNAME='phpseclib'
 HOSTNAME='phpseclib.bantux.org'
-HOSTRSAF='09:40:96:14:6a:cd:67:46:17:e5:b4:39:24:24:6e:9d'
 LDIRNAME='code_coverage'
 RDIRNAME='code_coverage'
-ID_RSA='travis/code_coverage_id_rsa'
 
-# Install expect if necessary
-if ! which expect > /dev/null
-then
-	sudo apt-get update -qq
-	sudo apt-get install -qq expect
-fi
+HERE=$(dirname "$0")
+SSH_CONFIG="$HERE/code_coverage_ssh_config"
+SSH_ID_RSA="$HERE/code_coverage_id_rsa"
+SSH_KHOSTS="$HERE/code_coverage_known_hosts"
 
 # Workaround for rsync not creating target directories with depth > 1
 mv "$LDIRNAME" "x$LDIRNAME"
@@ -32,19 +27,9 @@ mv "x$LDIRNAME" "$RROOT/PHP-$TRAVIS_PHP_VERSION/"
 ln -s "$TRAVIS_BUILD_NUMBER" "$RDIRNAME/$TRAVIS_BRANCH/latest"
 
 # Stop complaints about world-readable key file.
-chmod 600 "$ID_RSA"
+chmod 600 "$SSH_ID_RSA"
 
-export RSYNC_RSH="ssh -4 -i $ID_RSA -o ConnectTimeout=5"
-RSYNC_OPT="--recursive --times --links --progress"
-
-expect << EOF
-	spawn rsync $RSYNC_OPT "$RDIRNAME/" "$USERNAME@$HOSTNAME:$RDIRNAME/"
-
-	expect "RSA key fingerprint is $HOSTRSAF."
-	send "yes\n"
-
-	expect "Enter passphrase for key '$ID_RSA':"
-	send "$CODE_COVERAGE_PASSPHRASE\n"
-
-	expect eof
-EOF
+rsync \
+  --rsh="ssh -F $SSH_CONFIG -i $SSH_ID_RSA -o UserKnownHostsFile=$SSH_KHOSTS" \
+  --archive \
+  "$RDIRNAME/" "$USERNAME@$HOSTNAME:$RDIRNAME/"
