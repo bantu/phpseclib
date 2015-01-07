@@ -104,4 +104,17 @@ abstract class Unit_Crypt_AES_TestCase extends PhpseclibTestCase
         $ciphertext = $aes->encrypt(pack('H*', '3243f6a8885a308d313198a2e0370734'));
         $this->assertEquals($ciphertext, pack('H*', 'c109292b173f841b88e0ee49f13db8c0'));
     }
+
+    /**
+    * @group github601
+    */
+    public function testPHP561Array()
+    {
+        $rijndael = new Crypt_Rijndael();
+        $rijndael->setKey('hellothisismykey');
+        $array = array('k1' => 'value1', 'k2' => 'value2');
+        $expected = serialize($array);
+        $actual = $rijndael->decrypt($rijndael->encrypt($expected));
+        $this->assertSame($expected, $actual);
+    }
 }
