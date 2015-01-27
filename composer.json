@@ -46,7 +46,8 @@
         }
     ],
     "require": {
-        "php": ">=5.3.3"
+        "php": ">=5.3.3",
+        "lt/php-curve25519": "dev-master@dev"
     },
     "require-dev": {
         "phing/phing": "~2.7",
@@ -75,5 +76,11 @@
         "branch-alias": {
             "dev-php5": "2.0-dev"
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/lt/PHP-Curve25519.git"
+        }
+    ]
 }

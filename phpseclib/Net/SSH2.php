@@ -856,8 +856,8 @@ class SSH2
             6 => 'NET_SSH2_MSG_SERVICE_ACCEPT',
             20 => 'NET_SSH2_MSG_KEXINIT',
             21 => 'NET_SSH2_MSG_NEWKEYS',
-            30 => 'NET_SSH2_MSG_KEXDH_INIT',
-            31 => 'NET_SSH2_MSG_KEXDH_REPLY',
+            30 => 'NET_SSH2_MSG_KEXDH_INIT', // Also SSH_MSG_KEX_ECDH_INIT
+            31 => 'NET_SSH2_MSG_KEXDH_REPLY', // Also SSH_MSG_KEX_ECDH_REPLY
             50 => 'NET_SSH2_MSG_USERAUTH_REQUEST',
             51 => 'NET_SSH2_MSG_USERAUTH_FAILURE',
             52 => 'NET_SSH2_MSG_USERAUTH_SUCCESS',
@@ -1068,10 +1068,26 @@ class SSH2
      */
     function _key_exchange($kexinit_payload_server)
     {
-        static $kex_algorithms = array(
-            'diffie-hellman-group1-sha1', // REQUIRED
-            'diffie-hellman-group14-sha1' // REQUIRED
-        );
+        static $kex_algorithms = false;
+        if ($kex_algorithms === false) {
+            $kex_algorithms = array(
+                'curve25519-sha256@libssh.org', // OPTIONAL
+                'diffie-hellman-group1-sha1', // REQUIRED
+                'diffie-hellman-group14-sha1' // REQUIRED
+            );
+
+            // http://git.libssh.org/projects/libssh.git/tree/doc/curve25519-sha256@libssh.org.txt
+            // https://github.com/lt/php-curve25519-ext provides curve25519_public etc.
+            // https://github.com/lt/PHP-Curve25519 provides a Curve25519 class and
+            // curve25519_public etc. via side-effects.
+            if (!function_exists('curve25519_public') && !class_exists('\Curve25519')) {
+                $kex_algorithms = array_diff(
+                    $kex_algorithms,
+                    array('curve25519-sha256@libssh.org')
+                );
+            }
+            $kex_algorithms = array_values($kex_algorithms);
+        }
 
         static $server_host_key_algorithms = array(
             'ssh-rsa', // RECOMMENDED  sign   Raw RSA Key
@@ -1341,51 +1357,58 @@ class SSH2
             return $this->_disconnect(NET_SSH2_DISCONNECT_KEY_EXCHANGE_FAILED);
         }
 
-        switch ($kex_algorithms[$i]) {
-            // see http://tools.ietf.org/html/rfc2409#section-6.2 and
-            // http://tools.ietf.org/html/rfc2412, appendex E
-            case 'diffie-hellman-group1-sha1':
-                $prime = 'FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74' .
-                         '020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F1437' .
-                         '4FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED' .
-                         'EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE65381FFFFFFFFFFFFFFFF';
-                break;
-            // see http://tools.ietf.org/html/rfc3526#section-3
-            case 'diffie-hellman-group14-sha1':
-                $prime = 'FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74' .
-                         '020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F1437' .
-                         '4FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED' .
-                         'EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF05' .
-                         '98DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB' .
-                         '9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3B' .
-                         'E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF695581718' .
-                         '3995497CEA956AE515D2261898FA051015728E5A8AACAA68FFFFFFFFFFFFFFFF';
-                break;
+        if ($kex_algorithms[$i] === 'curve25519-sha256@libssh.org') {
+            $secret = Random::string(32);
+            $secret = str_repeat('a', 32);
+            $eBytes = curve25519_public($secret);
+            $kexHash = new Hash('sha256');
+        } else {
+          switch ($kex_algorithms[$i]) {
+              // see http://tools.ietf.org/html/rfc2409#section-6.2 and
+              // http://tools.ietf.org/html/rfc2412, appendex E
+              case 'diffie-hellman-group1-sha1':
+                  $prime = 'FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74' .
+                          '020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F1437' .
+                          '4FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED' .
+                          'EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE65381FFFFFFFFFFFFFFFF';
+                  break;
+              // see http://tools.ietf.org/html/rfc3526#section-3
+              case 'diffie-hellman-group14-sha1':
+                  $prime = 'FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74' .
+                          '020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F1437' .
+                          '4FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED' .
+                          'EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF05' .
+                          '98DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB' .
+                          '9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3B' .
+                          'E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF695581718' .
+                          '3995497CEA956AE515D2261898FA051015728E5A8AACAA68FFFFFFFFFFFFFFFF';
+                  break;
+          }
+
+          // For both diffie-hellman-group1-sha1 and diffie-hellman-group14-sha1
+          // the generator field element is 2 (decimal) and the hash function is sha1.
+          $g = new BigInteger(2);
+          $prime = new BigInteger($prime, 16);
+          $kexHash = new Hash('sha1');
+          //$q = $p->bitwise_rightShift(1);
+
+          /* To increase the speed of the key exchange, both client and server may
+            reduce the size of their private exponents.  It should be at least
+            twice as long as the key material that is generated from the shared
+            secret.  For more details, see the paper by van Oorschot and Wiener
+            [VAN-OORSCHOT].
+
+            -- http://tools.ietf.org/html/rfc4419#section-6.2 */
+          $one = new BigInteger(1);
+          $keyLength = min($keyLength, $kexHash->getLength());
+          $max = $one->bitwise_leftShift(16 * $keyLength); // 2 * 8 * $keyLength
+          $max = $max->subtract($one);
+
+          $x = $one->random($one, $max);
+          $e = $g->modPow($x, $prime);
+          $eBytes = $e->toBytes(true);
         }
 
-        // For both diffie-hellman-group1-sha1 and diffie-hellman-group14-sha1
-        // the generator field element is 2 (decimal) and the hash function is sha1.
-        $g = new BigInteger(2);
-        $prime = new BigInteger($prime, 16);
-        $kexHash = new Hash('sha1');
-        //$q = $p->bitwise_rightShift(1);
-
-        /* To increase the speed of the key exchange, both client and server may
-           reduce the size of their private exponents.  It should be at least
-           twice as long as the key material that is generated from the shared
-           secret.  For more details, see the paper by van Oorschot and Wiener
-           [VAN-OORSCHOT].
-
-           -- http://tools.ietf.org/html/rfc4419#section-6.2 */
-        $one = new BigInteger(1);
-        $keyLength = min($keyLength, $kexHash->getLength());
-        $max = $one->bitwise_leftShift(16 * $keyLength); // 2 * 8 * $keyLength
-        $max = $max->subtract($one);
-
-        $x = $one->random($one, $max);
-        $e = $g->modPow($x, $prime);
-
-        $eBytes = $e->toBytes(true);
         $data = pack('CNa*', NET_SSH2_MSG_KEXDH_INIT, strlen($eBytes), $eBytes);
 
         if (!$this->_send_binary_packet($data)) {
@@ -1413,7 +1436,6 @@ class SSH2
 
         $temp = unpack('Nlength', $this->_string_shift($response, 4));
         $fBytes = $this->_string_shift($response, $temp['length']);
-        $f = new BigInteger($fBytes, -256);
 
         $temp = unpack('Nlength', $this->_string_shift($response, 4));
         $this->signature = $this->_string_shift($response, $temp['length']);
@@ -1421,8 +1443,16 @@ class SSH2
         $temp = unpack('Nlength', $this->_string_shift($this->signature, 4));
         $this->signature_format = $this->_string_shift($this->signature, $temp['length']);
 
-        $key = $f->modPow($x, $prime);
-        $keyBytes = $key->toBytes(true);
+        if ($kex_algorithms[$i] === 'curve25519-sha256@libssh.org') {
+            if (strlen($fBytes) !== 32) {
+                user_error('Received curve25519-sha256 public key of invalid length.');
+                return false;
+            }
+            $keyBytes = curve25519_shared($secret, $fBytes);
+        } else {
+            $f = new BigInteger($fBytes, -256);
+            $keyBytes = $f->modPow($x, $prime)->toBytes(true);
+        }
 
         $this->exchange_hash = pack('Na*Na*Na*Na*Na*Na*Na*Na*',
             strlen($this->identifier), $this->identifier, strlen($this->server_identifier), $this->server_identifier,
@@ -1430,6 +1460,8 @@ class SSH2
             $kexinit_payload_server, strlen($this->server_public_host_key), $this->server_public_host_key, strlen($eBytes),
             $eBytes, strlen($fBytes), $fBytes, strlen($keyBytes), $keyBytes
         );
+
+var_dump(bin2hex($this->exchange_hash));
 
         $this->exchange_hash = $kexHash->hash($this->exchange_hash);
 
