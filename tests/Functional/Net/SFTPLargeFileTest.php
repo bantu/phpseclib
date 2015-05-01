@@ -14,7 +14,7 @@ class Functional_Net_SFTPLargeFileTest extends PhpseclibFunctionalTestCase
     protected $sftp;
     protected $scratchDir;
 
-    static public function setUpBeforeClass()
+    public static function setUpBeforeClass()
     {
         if (!extension_loaded('mcrypt')) {
             self::markTestSkipped('This test depends on mcrypt for performance.');

@@ -9,7 +9,7 @@ use phpseclib\Crypt\Base;
 
 class Unit_Crypt_AES_InternalTest extends Unit_Crypt_AES_TestCase
 {
-    static public function setUpBeforeClass()
+    public static function setUpBeforeClass()
     {
         parent::setUpBeforeClass();
 

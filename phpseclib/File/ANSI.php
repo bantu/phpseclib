@@ -333,10 +333,18 @@ class ANSI
                                         case 0: // Turn off character attributes
                                             $this->attrs[$this->y][$this->x] = '';
 
-                                            if ($this->bold) $this->attrs[$this->y][$this->x].= '</b>';
-                                            if ($this->underline) $this->attrs[$this->y][$this->x].= '</u>';
-                                            if ($this->blink) $this->attrs[$this->y][$this->x].= '</blink>';
-                                            if ($this->color) $this->attrs[$this->y][$this->x].= '</span>';
+                                            if ($this->bold) {
+                                                $this->attrs[$this->y][$this->x].= '</b>';
+                                            }
+                                            if ($this->underline) {
+                                                $this->attrs[$this->y][$this->x].= '</u>';
+                                            }
+                                            if ($this->blink) {
+                                                $this->attrs[$this->y][$this->x].= '</blink>';
+                                            }
+                                            if ($this->color) {
+                                                $this->attrs[$this->y][$this->x].= '</span>';
+                                            }
 
                                             if ($this->reverse) {
                                                 $temp = $this->background;
@@ -381,23 +389,39 @@ class ANSI
                                             //$back = $this->reverse ? &$this->foreground : &$this->background;
                                             $back = &$this->{ $this->reverse ? 'foreground' : 'background' };
                                             switch ($mod) {
-                                                case 30: $front = 'black'; break;
-                                                case 31: $front = 'red'; break;
-                                                case 32: $front = 'green'; break;
-                                                case 33: $front = 'yellow'; break;
-                                                case 34: $front = 'blue'; break;
-                                                case 35: $front = 'magenta'; break;
-                                                case 36: $front = 'cyan'; break;
-                                                case 37: $front = 'white'; break;
+                                                case 30: $front = 'black';
+                                                    break;
+                                                case 31: $front = 'red';
+                                                    break;
+                                                case 32: $front = 'green';
+                                                    break;
+                                                case 33: $front = 'yellow';
+                                                    break;
+                                                case 34: $front = 'blue';
+                                                    break;
+                                                case 35: $front = 'magenta';
+                                                    break;
+                                                case 36: $front = 'cyan';
+                                                    break;
+                                                case 37: $front = 'white';
+                                                    break;
 
-                                                case 40: $back = 'black'; break;
-                                                case 41: $back = 'red'; break;
-                                                case 42: $back = 'green'; break;
-                                                case 43: $back = 'yellow'; break;
-                                                case 44: $back = 'blue'; break;
-                                                case 45: $back = 'magenta'; break;
-                                                case 46: $back = 'cyan'; break;
-                                                case 47: $back = 'white'; break;
+                                                case 40: $back = 'black';
+                                                    break;
+                                                case 41: $back = 'red';
+                                                    break;
+                                                case 42: $back = 'green';
+                                                    break;
+                                                case 43: $back = 'yellow';
+                                                    break;
+                                                case 44: $back = 'blue';
+                                                    break;
+                                                case 45: $back = 'magenta';
+                                                    break;
+                                                case 46: $back = 'cyan';
+                                                    break;
+                                                case 47: $back = 'white';
+                                                    break;
 
                                                 default:
                                                     user_error('Unsupported attribute: ' . $mod);

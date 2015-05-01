@@ -305,7 +305,7 @@ class RC2 extends Base
     {
         if ($t1 <= 0) {
             $t1 = $this->default_key_length;
-        } else if ($t1 > 1024) {
+        } elseif ($t1 > 1024) {
             $t1 = 1024;
         }
         // Key byte count should be 1..128.

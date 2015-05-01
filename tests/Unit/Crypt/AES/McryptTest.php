@@ -9,7 +9,7 @@ use phpseclib\Crypt\Base;
 
 class Unit_Crypt_AES_McryptTest extends Unit_Crypt_AES_TestCase
 {
-    static public function setUpBeforeClass()
+    public static function setUpBeforeClass()
     {
         if (!extension_loaded('mcrypt')) {
             self::markTestSkipped('mcrypt extension is not available.');

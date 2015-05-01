@@ -11,7 +11,7 @@ use phpseclib\Crypt\Rijndael;
 
 abstract class Unit_Crypt_AES_TestCase extends PhpseclibTestCase
 {
-    static public function setUpBeforeClass()
+    public static function setUpBeforeClass()
     {
         include_once 'Crypt/AES.php';
 

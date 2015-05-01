@@ -14,7 +14,7 @@ class Functional_Net_SFTPUserStoryTest extends PhpseclibFunctionalTestCase
     static protected $exampleData;
     static protected $exampleDataLength;
 
-    static public function setUpBeforeClass()
+    public static function setUpBeforeClass()
     {
         parent::setUpBeforeClass();
 
@@ -302,7 +302,8 @@ class Functional_Net_SFTPUserStoryTest extends PhpseclibFunctionalTestCase
             if ($sftp->is_file($file)) {
                 $cur_size = $sftp->size($file);
                 $this->assertLessThanOrEqual(
-                    $last_size, $cur_size,
+                    $last_size,
+                    $cur_size,
                     'Failed asserting that nlist() is in descending order'
                 );
                 $last_size = $cur_size;
@@ -350,7 +351,9 @@ class Functional_Net_SFTPUserStoryTest extends PhpseclibFunctionalTestCase
     */
     public function testReadlink($sftp)
     {
-        $this->assertInternalType('string', $sftp->readlink('symlink'),
+        $this->assertInternalType(
+            'string',
+            $sftp->readlink('symlink'),
             'Failed asserting that a symlink\'s target could be read'
         );
 
