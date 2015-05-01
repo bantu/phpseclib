@@ -17,8 +17,9 @@
    <exclude name="PEAR.Commenting.FileComment.MissingVersion" />
    <exclude name="PEAR.Commenting.FileComment.SpacingBeforeTags" />
 
-   <!-- Test classes do not have to be namespaced. -->
+   <!-- Test classes do not have to be namespaced but may use camel caps. -->
    <exclude name="PSR1.Classes.ClassDeclaration.MissingNamespace" />
+   <exclude name="Squiz.Classes.ValidClassName.NotCamelCaps" />
  </rule>
 
 </ruleset>
